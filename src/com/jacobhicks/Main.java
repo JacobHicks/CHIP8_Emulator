@@ -61,7 +61,7 @@ public class Main {
             memory[tmp++] = (char)((i & 0xFF00) >> 8);
             memory[tmp++] = (char)(i & 0x00FF);
         }
-        FileInputStream in = new FileInputStream("TETRIS");
+        FileInputStream in = new FileInputStream("WORM3");
         char opcode;
         do {
             opcode = (char)((in.read() << 8) | (in.read()));
@@ -91,6 +91,9 @@ public class Main {
             }
             else if (opcode == 0x00EE) {    //Return from subroutine
                 pc = stack.pop();
+            }
+            else if (opcode == 0x00FF) {
+                graphics = new boolean[64][128];
             }
             else if ((opcode & 0xF000) == 0x1000) { //
                 pc = (char)((opcode & 0x0FFF)-2);
@@ -258,10 +261,10 @@ public class Main {
         }
         public void update(){
             g = getGraphics();
-            for(int i = 0; i < 32; i++){
-                for(int x = 0; x < 64; x++){
+            for(int i = 0; i < graphics.length; i++){
+                for(int x = 0; x < graphics[0].length; x++){
                     g.setColor(graphics[i][x] ? Color.WHITE : Color.BLACK);
-                    g.fillRect(x*(getWidth()/64), i*(getHeight()/32), (getWidth()/64), (getHeight()/32));
+                    g.fillRect(x*(getWidth()/64), i*(getHeight()/graphics.length), (getWidth()/graphics[0].length), (getHeight()/graphics.length));
                 }
             }
         }
