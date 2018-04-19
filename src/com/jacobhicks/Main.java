@@ -151,9 +151,6 @@ public class Main {
                 for (int i = 0; i < (opcode & 0x000F); i++) {
                     Screen.drawByte(V[(opcode & 0x0F00)>>8], V[(opcode & 0x00F0) >> 4] + i, memory[I + i]);
                 }
-                long start = System.nanoTime();
-                while(System.nanoTime() - start < 5500000);
-                if(sound_timer > 0) Toolkit.getDefaultToolkit().beep();
             }
             else if ((opcode & 0xF000) == 0xE000 && ((opcode & 0x00FF) == 0x009E)) {
                 if(keypad[((opcode & 0x0F00)>>8)]) pc+=2;
@@ -190,6 +187,9 @@ public class Main {
                 break;
             }
             //System.out.println(String.format("PC: 0x%04X OPCODE: 0x%04X", (int)pc, (int)opcode));
+            long start = System.nanoTime();
+            while(System.nanoTime() - start < 500000);
+            if(sound_timer > 0) Toolkit.getDefaultToolkit().beep();
             pc+=2;
         }
     }
