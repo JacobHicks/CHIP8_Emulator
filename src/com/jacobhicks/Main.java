@@ -22,14 +22,14 @@ import java.util.Stack;
 import static java.awt.event.KeyEvent.*;
 
 public class Main {
-    static int testing = 0;
 
-    static Stack<Character> stack = new Stack<>();
-    static char[] memory = new char[4096];
-    static boolean[][] graphics = new boolean[32][64];
-    static char[] V = new char[16];
-    static boolean[] keypad = new boolean[16];
-    static final char[] font = new char[]{
+    private static int testing = 0;
+    private static Stack<Character> stack = new Stack<>();
+    private static char[] memory = new char[4096];
+    private static boolean[][] graphics = new boolean[32][64];
+    private static char[] V = new char[16];
+    private static volatile boolean[] keypad = new boolean[16];
+    private static final char[] font = new char[]{
         0xF0, 0x90, 0x90, 0x90, 0xF0,
             0x20, 0x60, 0x20, 0x20, 0x70,        // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0,        // 2
@@ -47,11 +47,11 @@ public class Main {
             0xF0, 0x80, 0xF0, 0x80, 0xF0,        // E
             0xF0, 0x80, 0xF0, 0x80, 0x80        // F
     };
-    static int I;
-    static char pc;
-    static volatile char sound_timer;
-    static volatile char delay_timer;
-    static volatile Screen screen = new Screen();
+    private static int I;
+    private static char pc;
+    private static volatile char sound_timer;
+    private static volatile char delay_timer;
+    private static volatile Screen screen = new Screen();
 
     public static void main(String[] args) throws Exception{
         Arrays.fill(V, (char) 0);
@@ -61,7 +61,7 @@ public class Main {
             memory[tmp++] = (char)((i & 0xFF00) >> 8);
             memory[tmp++] = (char)(i & 0x00FF);
         }
-        FileInputStream in = new FileInputStream("WORM3");
+        FileInputStream in = new FileInputStream("BRIX");
         char opcode;
         do {
             opcode = (char)((in.read() << 8) | (in.read()));
@@ -151,6 +151,9 @@ public class Main {
                 for (int i = 0; i < (opcode & 0x000F); i++) {
                     Screen.drawByte(V[(opcode & 0x0F00)>>8], V[(opcode & 0x00F0) >> 4] + i, memory[I + i]);
                 }
+                long start = System.nanoTime();
+                while(System.nanoTime() - start < 5500000);
+                if(sound_timer > 0) Toolkit.getDefaultToolkit().beep();
             }
             else if ((opcode & 0xF000) == 0xE000 && ((opcode & 0x00FF) == 0x009E)) {
                 if(keypad[((opcode & 0x0F00)>>8)]) pc+=2;
@@ -187,9 +190,6 @@ public class Main {
                 break;
             }
             //System.out.println(String.format("PC: 0x%04X OPCODE: 0x%04X", (int)pc, (int)opcode));
-            long start = System.nanoTime();
-            while(System.nanoTime() - start < 500000);
-            if(sound_timer > 0) Toolkit.getDefaultToolkit().beep();
             pc+=2;
         }
     }
@@ -240,8 +240,7 @@ public class Main {
 
     static class Screen extends JFrame {
         Graphics g;
-        public Screen(){
-
+        Screen(){
             setAlwaysOnTop(true);
             setSize(128, 64);
             setLayout(null);
@@ -253,20 +252,22 @@ public class Main {
         static void drawByte(int x, int y, char byt){
             String bitfield = String.format("%8s", Integer.toBinaryString(byt)).replace(' ', '0');
             for (char c : bitfield.toCharArray()){
-                x %= 64;
-                y %= 32;
+                x %= graphics[0].length;
+                y %= graphics.length;
                 if (graphics[y][x] && c=='1') V[0xF] = 1;
                 graphics[y][x++] ^= c=='1';
             }
         }
         public void update(){
-            g = getGraphics();
+            Image buff = createImage(getWidth(), getHeight());
+            g = buff.getGraphics();
             for(int i = 0; i < graphics.length; i++){
                 for(int x = 0; x < graphics[0].length; x++){
                     g.setColor(graphics[i][x] ? Color.WHITE : Color.BLACK);
                     g.fillRect(x*(getWidth()/64), i*(getHeight()/graphics.length), (getWidth()/graphics[0].length), (getHeight()/graphics.length));
                 }
             }
+            getGraphics().drawImage(buff, 0, 0, null);
         }
     }
     
